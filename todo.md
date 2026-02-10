@@ -3,8 +3,6 @@
 ## Funcionalidades
 
 - [x] Sistema de login único com senha 'Titan2026' (sem campo de usuário)
-- [x] Upload de CSV com detecção inteligente de datas duplicadas
-- [x] Processamento de CSV com extração de Gestor, Rede, Nicho, ADV, VSL e Produto
 - [x] Filtros dinâmicos: Gestor, Rede, Nicho, ADV, VSL, Período
 - [x] Visualização padrão sem filtros mostra todos os funis ordenados por gasto
 - [x] Tabela de resultados dia a dia agregando gestores/redes por funil
@@ -12,6 +10,7 @@
 - [x] Cores no ROI: vermelho (<0%), amarelo (0-10%), verde (>10%)
 - [x] Totalizadores no topo: Total Gasto, Total Profit, ROI Geral, Total Compras
 - [x] Banco de dados para persistência de dados históricos
+- [ ] Integração com RedTrack API para importação de dados
 
 ## Redes Suportadas
 
@@ -27,32 +26,26 @@
 
 ## Backend
 
-- [x] API de upload de CSV
 - [x] API de consulta com filtros
-- [x] Lógica de detecção de datas duplicadas
-- [x] Extração de dados do nome da campanha (Gestor, Rede)
+- [ ] Integração com RedTrack API para sincronização de dados
+- [ ] Processamento de dados do RedTrack API (extração de Gestor, Rede, Nicho, ADV, VSL, Produto)
 
 ## Frontend
 
 - [x] Tela de login com senha única
-- [x] Tela de upload de CSV
 - [x] Dashboard com filtros e tabela de dados
 - [x] Componente de totalizadores
 - [x] Formatação de cores no ROI
+- [x] Gráfico de colunas com gasto por dia e ROI
 
 ## Funcionalidades Adicionais
 
 - [ ] Detectar produtos desconhecidos e perguntar qual nicho pertence
 
-## Correções
+## Notas de Desenvolvimento
 
-- [x] Corrigir formato CSV: "InitiateCheckout CPA" é um campo único (não dois separados)
-
-## Novas Tarefas (19/01)
-
-- [x] Corrigir texto do formato CSV no modal de upload (InitiateCheckout CPA como campo único)
-- [x] Adicionar gráfico de colunas com gasto por dia e ROI dentro de cada coluna
-- [x] Deletar dados antigos e carregar novos dados (26/12 a 19/01)
+- [x] Removidas todas as dependências de CSV e planilhas (09/02/2026)
+- [ ] Preparar estrutura para requisições RedTrack API
 
 ## Bugs Reportados
 

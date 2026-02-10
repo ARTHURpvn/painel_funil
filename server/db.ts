@@ -1,6 +1,6 @@
-import { eq, and, gte, lte, sql, inArray, desc } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, funnelData, InsertFunnelData, FunnelData } from "../drizzle/schema";
+import { InsertUser, users, funnelData } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -104,40 +104,6 @@ export async function getExistingDates(): Promise<string[]> {
   return result.map(r => r.date ? new Date(r.date).toISOString().split('T')[0] : '');
 }
 
-export async function checkDatesExist(dates: string[]): Promise<string[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  // Convert string dates to Date objects for comparison
-  const dateObjects = dates.map(d => new Date(d));
-  
-  const result = await db
-    .selectDistinct({ date: funnelData.dataRegistro })
-    .from(funnelData)
-    .where(inArray(funnelData.dataRegistro, dateObjects));
-
-  return result.map(r => r.date ? new Date(r.date).toISOString().split('T')[0] : '');
-}
-
-export async function deleteDataByDates(dates: string[]): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-
-  const dateObjects = dates.map(d => new Date(d));
-  await db.delete(funnelData).where(inArray(funnelData.dataRegistro, dateObjects));
-}
-
-export async function insertFunnelData(data: InsertFunnelData[]): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-
-  // Insert in batches of 100
-  const batchSize = 100;
-  for (let i = 0; i < data.length; i += batchSize) {
-    const batch = data.slice(i, i + batchSize);
-    await db.insert(funnelData).values(batch);
-  }
-}
 
 export interface FunnelFilters {
   gestor?: string;
@@ -149,40 +115,6 @@ export interface FunnelFilters {
   dataFim?: string;
 }
 
-export async function getFunnelData(filters: FunnelFilters): Promise<FunnelData[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  const conditions = [];
-
-  if (filters.gestor) {
-    conditions.push(eq(funnelData.gestor, filters.gestor));
-  }
-  if (filters.rede) {
-    conditions.push(eq(funnelData.rede, filters.rede));
-  }
-  if (filters.nicho) {
-    conditions.push(eq(funnelData.nicho, filters.nicho));
-  }
-  if (filters.adv) {
-    conditions.push(eq(funnelData.adv, filters.adv));
-  }
-  if (filters.vsl) {
-    conditions.push(eq(funnelData.vsl, filters.vsl));
-  }
-  if (filters.dataInicio) {
-    conditions.push(gte(funnelData.dataRegistro, new Date(filters.dataInicio)));
-  }
-  if (filters.dataFim) {
-    conditions.push(lte(funnelData.dataRegistro, new Date(filters.dataFim)));
-  }
-
-  const query = conditions.length > 0
-    ? db.select().from(funnelData).where(and(...conditions))
-    : db.select().from(funnelData);
-
-  return await query;
-}
 
 export async function getAggregatedFunnelData(filters: FunnelFilters) {
   const db = await getDb();

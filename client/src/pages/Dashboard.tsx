@@ -1,19 +1,11 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Upload } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import CSVUpload from "@/components/CSVUpload";
 import Filters from "@/components/Filters";
 import Totals from "@/components/Totals";
 import DataTable from "@/components/DataTable";
 import DailyChart from "@/components/DailyChart";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -31,19 +23,18 @@ interface FilterValues {
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [filters, setFilters] = useState<FilterValues>({});
-  const [showUpload, setShowUpload] = useState(false);
 
   // Fetch filter options
-  const { data: filterOptions, refetch: refetchFilters } = trpc.funnel.getFilters.useQuery();
+  const { data: filterOptions } = trpc.funnel.getFilters.useQuery();
 
   // Fetch data with filters
-  const { data: funnelData, isLoading: isLoadingData, refetch: refetchData } = trpc.funnel.getData.useQuery(filters);
+  const { data: funnelData, isLoading: isLoadingData } = trpc.funnel.getData.useQuery(filters);
 
   // Fetch totals with filters
-  const { data: totals, isLoading: isLoadingTotals, refetch: refetchTotals } = trpc.funnel.getTotals.useQuery(filters);
+  const { data: totals, isLoading: isLoadingTotals } = trpc.funnel.getTotals.useQuery(filters);
 
   // Fetch daily totals for chart
-  const { data: dailyTotals, refetch: refetchDailyTotals } = trpc.funnel.getDailyTotals.useQuery(filters);
+  const { data: dailyTotals } = trpc.funnel.getDailyTotals.useQuery(filters);
 
   // Memoized filter options with defaults
   const options = useMemo(
@@ -57,13 +48,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     [filterOptions]
   );
 
-  const handleUploadSuccess = () => {
-    setShowUpload(false);
-    refetchFilters();
-    refetchData();
-    refetchTotals();
-    refetchDailyTotals();
-  };
 
   const handleClearFilters = () => {
     setFilters({});
@@ -81,20 +65,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         <div className="container py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Painel de Funis</h1>
           <div className="flex items-center gap-3">
-            <Dialog open={showUpload} onOpenChange={setShowUpload}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload CSV
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Upload de Dados</DialogTitle>
-                </DialogHeader>
-                <CSVUpload onUploadSuccess={handleUploadSuccess} />
-              </DialogContent>
-            </Dialog>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               Sair
