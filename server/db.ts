@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, funnelData } from "../drizzle/schema";
+import { InsertUser, users, funnelData, InsertFunnelData } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -91,6 +91,94 @@ export async function getUserByOpenId(openId: string) {
 // ============================================
 // Funnel Data Functions
 // ============================================
+
+/**
+ * Insert funnel data in batch
+ * Used for importing data from RedTrack API
+ */
+export async function insertFunnelDataBatch(records: InsertFunnelData[]): Promise<number> {
+  const db = await getDb();
+  if (!db || records.length === 0) {
+    console.warn('[Database] Cannot insert funnel data: database not available or no records');
+    return 0;
+  }
+
+  try {
+    // Insert in batches of 500 to avoid query size limits
+    const batchSize = 500;
+    let totalInserted = 0;
+
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      await db.insert(funnelData).values(batch);
+      totalInserted += batch.length;
+      console.log(`[Database] Inserted batch ${Math.floor(i / batchSize) + 1}: ${batch.length} records`);
+    }
+
+    console.log(`[Database] Successfully inserted ${totalInserted} funnel records`);
+    return totalInserted;
+  } catch (error) {
+    console.error('[Database] Failed to insert funnel data batch:', error);
+    throw error;
+  }
+}
+
+/**
+ * Upsert (insert or update) funnel data
+ * Useful for updating existing records or inserting new ones
+ */
+export async function upsertFunnelData(record: InsertFunnelData): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn('[Database] Cannot upsert funnel data: database not available');
+    return;
+  }
+
+  try {
+    await db.insert(funnelData).values(record).onDuplicateKeyUpdate({
+      set: {
+        cost: record.cost,
+        profit: record.profit,
+        roi: record.roi,
+        purchases: record.purchases,
+        initiateCheckoutCPA: record.initiateCheckoutCPA,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('[Database] Failed to upsert funnel data:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete funnel data for a specific date range
+ * Useful for re-importing data
+ */
+export async function deleteFunnelDataByDateRange(startDate: string, endDate: string): Promise<number> {
+  const db = await getDb();
+  if (!db) {
+    console.warn('[Database] Cannot delete funnel data: database not available');
+    return 0;
+  }
+
+  try {
+    const result = await db
+      .delete(funnelData)
+      .where(
+        and(
+          gte(funnelData.dataRegistro, new Date(startDate)),
+          lte(funnelData.dataRegistro, new Date(endDate))
+        )
+      );
+
+    console.log(`[Database] Deleted funnel data from ${startDate} to ${endDate}`);
+    return 0; // MySQL driver doesn't return affected rows count easily
+  } catch (error) {
+    console.error('[Database] Failed to delete funnel data:', error);
+    throw error;
+  }
+}
 
 export async function getExistingDates(): Promise<string[]> {
   const db = await getDb();

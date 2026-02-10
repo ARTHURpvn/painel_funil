@@ -6,6 +6,7 @@ import Filters from "@/components/Filters";
 import Totals from "@/components/Totals";
 import DataTable from "@/components/DataTable";
 import DailyChart from "@/components/DailyChart";
+import { RedTrackImporter } from "@/components/RedTrackImporter";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -60,6 +61,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      <RedTrackImporter />
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-20">
         <div className="container py-4 flex items-center justify-between">
