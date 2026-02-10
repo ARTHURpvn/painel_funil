@@ -1,0 +1,110 @@
+{
+  "query": "SELECT data_registro, COUNT(*) as total FROM funnel_data GROUP BY data_registro ORDER BY data_registro;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4AGMYUQauNeVeRn.root --database WHsAGXuCwdjmhArfgPTnAw --execute SELECT data_registro, COUNT(*) as total FROM funnel_data GROUP BY data_registro ORDER BY data_registro;",
+  "rows": [
+    {
+      "data_registro": "2025-12-25",
+      "total": "399"
+    },
+    {
+      "data_registro": "2025-12-26",
+      "total": "527"
+    },
+    {
+      "data_registro": "2025-12-27",
+      "total": "435"
+    },
+    {
+      "data_registro": "2025-12-28",
+      "total": "488"
+    },
+    {
+      "data_registro": "2025-12-29",
+      "total": "619"
+    },
+    {
+      "data_registro": "2025-12-30",
+      "total": "562"
+    },
+    {
+      "data_registro": "2025-12-31",
+      "total": "515"
+    },
+    {
+      "data_registro": "2026-01-01",
+      "total": "532"
+    },
+    {
+      "data_registro": "2026-01-02",
+      "total": "656"
+    },
+    {
+      "data_registro": "2026-01-03",
+      "total": "611"
+    },
+    {
+      "data_registro": "2026-01-04",
+      "total": "607"
+    },
+    {
+      "data_registro": "2026-01-05",
+      "total": "593"
+    },
+    {
+      "data_registro": "2026-01-06",
+      "total": "611"
+    },
+    {
+      "data_registro": "2026-01-07",
+      "total": "757"
+    },
+    {
+      "data_registro": "2026-01-08",
+      "total": "854"
+    },
+    {
+      "data_registro": "2026-01-09",
+      "total": "674"
+    },
+    {
+      "data_registro": "2026-01-10",
+      "total": "599"
+    },
+    {
+      "data_registro": "2026-01-11",
+      "total": "565"
+    },
+    {
+      "data_registro": "2026-01-12",
+      "total": "582"
+    },
+    {
+      "data_registro": "2026-01-13",
+      "total": "781"
+    },
+    {
+      "data_registro": "2026-01-14",
+      "total": "698"
+    },
+    {
+      "data_registro": "2026-01-15",
+      "total": "631"
+    },
+    {
+      "data_registro": "2026-01-16",
+      "total": "595"
+    },
+    {
+      "data_registro": "2026-01-17",
+      "total": "550"
+    },
+    {
+      "data_registro": "2026-01-18",
+      "total": "330"
+    }
+  ],
+  "messages": [],
+  "stdout": "data_registro\ttotal\n2025-12-25\t399\n2025-12-26\t527\n2025-12-27\t435\n2025-12-28\t488\n2025-12-29\t619\n2025-12-30\t562\n2025-12-31\t515\n2026-01-01\t532\n2026-01-02\t656\n2026-01-03\t611\n2026-01-04\t607\n2026-01-05\t593\n2026-01-06\t611\n2026-01-07\t757\n2026-01-08\t854\n2026-01-09\t674\n2026-01-10\t599\n2026-01-11\t565\n2026-01-12\t582\n2026-01-13\t781\n2026-01-14\t698\n2026-01-15\t631\n2026-01-16\t595\n2026-01-17\t550\n2026-01-18\t330\n",
+  "stderr": "",
+  "execution_time_ms": 57
+}

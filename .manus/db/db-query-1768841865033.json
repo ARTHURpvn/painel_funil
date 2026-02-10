@@ -1,0 +1,110 @@
+{
+  "query": "SELECT data_registro, SUM(cost) as total_cost FROM funnel_data GROUP BY data_registro ORDER BY data_registro;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4AGMYUQauNeVeRn.root --database WHsAGXuCwdjmhArfgPTnAw --execute SELECT data_registro, SUM(cost) as total_cost FROM funnel_data GROUP BY data_registro ORDER BY data_registro;",
+  "rows": [
+    {
+      "data_registro": "2025-12-25",
+      "total_cost": "9010.41"
+    },
+    {
+      "data_registro": "2025-12-26",
+      "total_cost": "23554.73"
+    },
+    {
+      "data_registro": "2025-12-27",
+      "total_cost": "25014.88"
+    },
+    {
+      "data_registro": "2025-12-28",
+      "total_cost": "26217.13"
+    },
+    {
+      "data_registro": "2025-12-29",
+      "total_cost": "39977.04"
+    },
+    {
+      "data_registro": "2025-12-30",
+      "total_cost": "41803.26"
+    },
+    {
+      "data_registro": "2025-12-31",
+      "total_cost": "41577.78"
+    },
+    {
+      "data_registro": "2026-01-01",
+      "total_cost": "40377.82"
+    },
+    {
+      "data_registro": "2026-01-02",
+      "total_cost": "74323.35"
+    },
+    {
+      "data_registro": "2026-01-03",
+      "total_cost": "62013.38"
+    },
+    {
+      "data_registro": "2026-01-04",
+      "total_cost": "35159.75"
+    },
+    {
+      "data_registro": "2026-01-05",
+      "total_cost": "56690.51"
+    },
+    {
+      "data_registro": "2026-01-06",
+      "total_cost": "41236.67"
+    },
+    {
+      "data_registro": "2026-01-07",
+      "total_cost": "46344.29"
+    },
+    {
+      "data_registro": "2026-01-08",
+      "total_cost": "60349.82"
+    },
+    {
+      "data_registro": "2026-01-09",
+      "total_cost": "28974.17"
+    },
+    {
+      "data_registro": "2026-01-10",
+      "total_cost": "24783.45"
+    },
+    {
+      "data_registro": "2026-01-11",
+      "total_cost": "24705.40"
+    },
+    {
+      "data_registro": "2026-01-12",
+      "total_cost": "24475.34"
+    },
+    {
+      "data_registro": "2026-01-13",
+      "total_cost": "39375.47"
+    },
+    {
+      "data_registro": "2026-01-14",
+      "total_cost": "35063.75"
+    },
+    {
+      "data_registro": "2026-01-15",
+      "total_cost": "38992.80"
+    },
+    {
+      "data_registro": "2026-01-16",
+      "total_cost": "47645.76"
+    },
+    {
+      "data_registro": "2026-01-17",
+      "total_cost": "22977.86"
+    },
+    {
+      "data_registro": "2026-01-18",
+      "total_cost": "4896.33"
+    }
+  ],
+  "messages": [],
+  "stdout": "data_registro\ttotal_cost\n2025-12-25\t9010.41\n2025-12-26\t23554.73\n2025-12-27\t25014.88\n2025-12-28\t26217.13\n2025-12-29\t39977.04\n2025-12-30\t41803.26\n2025-12-31\t41577.78\n2026-01-01\t40377.82\n2026-01-02\t74323.35\n2026-01-03\t62013.38\n2026-01-04\t35159.75\n2026-01-05\t56690.51\n2026-01-06\t41236.67\n2026-01-07\t46344.29\n2026-01-08\t60349.82\n2026-01-09\t28974.17\n2026-01-10\t24783.45\n2026-01-11\t24705.40\n2026-01-12\t24475.34\n2026-01-13\t39375.47\n2026-01-14\t35063.75\n2026-01-15\t38992.80\n2026-01-16\t47645.76\n2026-01-17\t22977.86\n2026-01-18\t4896.33\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}
