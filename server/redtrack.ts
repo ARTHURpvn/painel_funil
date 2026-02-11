@@ -4,22 +4,16 @@ import { z } from 'zod';
 // Schemas para validação dos dados da RedTrack API
 const RedTrackCampaignSchema = z.object({
   campaign: z.string().optional().default(''),
+  gestor: z.string().optional().default(''),
+  vsl: z.string().optional().default(''),
+  nicho: z.string().optional().default(''),
+  product: z.string().optional().default(''),
   cost: z.number().or(z.string()).optional().default(0),
-  revenue: z.number().or(z.string()).optional().default(0),
   profit: z.number().or(z.string()).optional().default(0),
-  conversions: z.number().or(z.string()).optional().default(0),
-  roi: z.number().or(z.string()).optional().default(0),
-  clicks: z.number().or(z.string()).optional().default(0),
-  ctr: z.number().or(z.string()).optional().default(0),
-  cpc: z.number().or(z.string()).optional().default(0),
-  cpa: z.number().or(z.string()).optional().default(0),
-  epc: z.number().or(z.string()).optional().default(0),
-  ecpm: z.number().or(z.string()).optional().default(0),
+  roi: z.number().or(z.string()).optional().default(0)
 })
 
 const RedTrackReportSchema = z.array(RedTrackCampaignSchema);
-
-export type RedTrackCampaign = z.infer<typeof RedTrackCampaignSchema>;
 export type RedTrackReport = z.infer<typeof RedTrackReportSchema>;
 
 /**
@@ -62,6 +56,7 @@ export class RedTrackService {
   ): Promise<RedTrackReport> {
     try {
       console.log(`[RedTrack] Fetching report from ${startDate} to ${endDate}`);
+      let res: string[] = [];
 
       const params: Record<string, string> = {
         api_key: this.apiKey,
@@ -73,9 +68,17 @@ export class RedTrackService {
       };
 
       const response = await this.client.get('/report', { params });
+      let parsed = RedTrackReportSchema.parse(response.data);
 
-      const parsed = RedTrackReportSchema.parse(response.data);
+      parsed = parsed.filter(record => record.campaign.includes(" NTE-"))
+
+      parsed.forEach((record, index) => {
+        res = record.campaign.split(" | ")
+        parsed[index].gestor = res[1] || '';
+        parsed[index].product = res[4] || '';
+      })
       console.log(parsed);
+
       console.log(`[RedTrack] Successfully fetched ${parsed?.length || 0} records`);
 
       return parsed;
