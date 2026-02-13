@@ -58,12 +58,12 @@ export class RedTrackService {
       console.log(`[RedTrack] Fetching report from ${startDate} to ${endDate}`);
       let res: string[] = [];
 
-      const params: Record<string, string> = {
+      const params: Record<string, string|boolean> = {
         api_key: this.apiKey,
         group: groupBy.join(","),
         date_from: startDate,
         date_to: endDate,
-        total: "false",
+        total: false,
         rt_campaign: "NT",
       };
 
