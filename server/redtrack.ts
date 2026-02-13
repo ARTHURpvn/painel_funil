@@ -70,15 +70,13 @@ export class RedTrackService {
       const response = await this.client.get("/report", { params });
       let parsed = RedTrackReportSchema.parse(response.data);
 
-      parsed = parsed.filter(
-        record =>
-          record.campaign.includes("NTE-ERICK") ||
-          record.campaign.includes("NTE-Erick") ||
-          record.campaign.includes("NTE-NAYARA") ||
-          record.campaign.includes("NTE-Nayara") ||
-          record.campaign.includes("NTE-BARROS") ||
-          record.campaign.includes("NTE-Barros")
-      );
+      // normalizar maiusculo e minusculo
+      const permitidos = ["NTE-NAYARA", "NTE-ERICK", "NTE-BARROS"];
+
+      parsed = parsed.filter(record => {
+        const nomeCampanha = record.campaign.toUpperCase();
+        return permitidos.some(termo => nomeCampanha.includes(termo));
+      });
 
       parsed.forEach((record, index) => {
         res = record.campaign.split(" | ");
