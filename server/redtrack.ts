@@ -5,7 +5,7 @@ import { z } from "zod";
 const RedTrackCampaignSchema = z.object({
   campaign: z.string().optional().default(""),
   gestor: z.string().optional().default(""),
-  vsl: z.string().optional().default(""),
+  site: z.string().optional().default(""),
   nicho: z.string().optional().default(""),
   product: z.string().optional().default(""),
   cost: z.number().or(z.string()).optional().default(0),
@@ -63,11 +63,21 @@ export class RedTrackService {
         group: groupBy.join(","),
         date_from: startDate,
         date_to: endDate,
-        total: "false",
-        rt_campaign: "NT",
+        total: "false"
       };
 
-      const response = await this.client.get("/report", { params });
+      let response = await this.client.get("/report", {
+        params: { ...params, rt_campaign: "NAYARA" },
+      });
+
+      let n_response = await this.client.get("/report", {
+        params: { ...params, rt_campaign: "NT" },
+      });
+
+      if(n_response.data) {
+        response.data = response.data.concat(n_response.data);
+      }
+
       let parsed = RedTrackReportSchema.parse(response.data);
 
       // normalizar maiusculo e minusculo
@@ -82,6 +92,9 @@ export class RedTrackService {
         res = record.campaign.split(" | ");
         parsed[index].gestor = res[1] || "";
         parsed[index].product = res[4] || "";
+        parsed[index].nicho = res[3] || "";
+        if(res[1] === "NTE-Erick") parsed[index].site = res[7];
+        else parsed[index].site = res[6];
       });
       console.log(parsed);
 
