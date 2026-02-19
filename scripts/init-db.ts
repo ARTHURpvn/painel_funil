@@ -25,20 +25,37 @@ async function initializeDatabase() {
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL não está configurado no arquivo .env');
     console.log('\n📝 Configure a variável DATABASE_URL no arquivo .env:');
-    console.log('DATABASE_URL=mysql://usuario:senha@localhost:3306/painel_funis\n');
+    console.log('DATABASE_URL=mysql://usuario[:senha]@localhost:3306/painel_funis\n');
     process.exit(1);
   }
 
-  // Parse database URL
-  const urlMatch = databaseUrl.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+  // Parse database URL (password and port are optional)
+  let user: string;
+  let password: string | undefined;
+  let host: string;
+  let port: number;
+  let database: string;
 
-  if (!urlMatch) {
+  try {
+    const parsedUrl = new URL(databaseUrl);
+    if (parsedUrl.protocol !== 'mysql:') {
+      throw new Error('Invalid protocol');
+    }
+
+    user = decodeURIComponent(parsedUrl.username);
+    password = parsedUrl.password ? decodeURIComponent(parsedUrl.password) : undefined;
+    host = parsedUrl.hostname;
+    port = parsedUrl.port ? parseInt(parsedUrl.port, 10) : 3306;
+    database = parsedUrl.pathname.replace(/^\//, '');
+
+    if (!user || !host || !database) {
+      throw new Error('Missing required parts');
+    }
+  } catch {
     console.error('❌ Formato inválido de DATABASE_URL');
-    console.log('Formato esperado: mysql://usuario:senha@host:porta/banco_de_dados');
+    console.log('Formato esperado: mysql://usuario[:senha]@host[:porta]/banco_de_dados');
     process.exit(1);
   }
-
-  const [, user, password, host, port, database] = urlMatch;
 
   console.log('🔧 Inicializando banco de dados...\n');
   console.log(`Host: ${host}:${port}`);
@@ -50,12 +67,18 @@ async function initializeDatabase() {
   try {
     // Connect without specifying database
     console.log('📡 Conectando ao MySQL...');
-    connection = await mysql.createConnection({
+    const connectionConfig: mysql.ConnectionOptions = {
       host,
-      port: parseInt(port),
+      port,
       user,
-      password,
-    });
+    };
+
+    // Only add password if it's provided
+    if (password) {
+      connectionConfig.password = password;
+    }
+
+    connection = await mysql.createConnection(connectionConfig);
 
     console.log('✅ Conectado ao MySQL\n');
 
@@ -114,4 +137,3 @@ async function initializeDatabase() {
 }
 
 initializeDatabase();
-

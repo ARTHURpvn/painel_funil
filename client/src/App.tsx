@@ -3,7 +3,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 
 function App() {
@@ -37,11 +36,7 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          {isAuthenticated ? (
             <Dashboard onLogout={handleLogout} />
-          ) : (
-            <Login onLogin={handleLogin} />
-          )}
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

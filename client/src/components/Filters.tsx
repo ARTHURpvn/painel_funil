@@ -13,18 +13,16 @@ import { Filter, X } from "lucide-react";
 
 interface FilterOptions {
   gestores: string[];
-  redes: string[];
+  sites: string[];
   nichos: string[];
-  advs: string[];
-  vsls: string[];
+  products: string[];
 }
 
 interface FilterValues {
   gestor?: string;
-  rede?: string;
+  site?: string;
   nicho?: string;
-  adv?: string;
-  vsl?: string;
+  product?: string;
   dataInicio?: string;
   dataFim?: string;
 }
@@ -36,13 +34,6 @@ interface FiltersProps {
   onClear: () => void;
 }
 
-const REDE_LABELS: Record<string, string> = {
-  MG: "MediaGo",
-  NB: "Newsbreak",
-  TB: "Taboola",
-  RC: "Revcontent",
-  OB: "Outbrain",
-};
 
 export default function Filters({ options, values, onChange, onClear }: FiltersProps) {
   const handleChange = (key: keyof FilterValues, value: string | undefined) => {
@@ -68,7 +59,7 @@ export default function Filters({ options, values, onChange, onClear }: FiltersP
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Gestor */}
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">Gestor</Label>
@@ -90,21 +81,21 @@ export default function Filters({ options, values, onChange, onClear }: FiltersP
             </Select>
           </div>
 
-          {/* Rede */}
+          {/* Site */}
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Rede</Label>
+            <Label className="text-sm text-muted-foreground">Site</Label>
             <Select
-              value={values.rede || "all"}
-              onValueChange={(v) => handleChange("rede", v)}
+              value={values.site || "all"}
+              onValueChange={(v) => handleChange("site", v)}
             >
               <SelectTrigger className="bg-input border-border">
-                <SelectValue placeholder="Todas" />
+                <SelectValue placeholder="Todos" />
               </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="all">Todas</SelectItem>
-                {options.redes.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r} ({REDE_LABELS[r] || r})
+              <SelectContent className="bg-popover border-border max-h-60">
+                <SelectItem value="all">Todos</SelectItem>
+                {options.sites.sort().map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -132,42 +123,21 @@ export default function Filters({ options, values, onChange, onClear }: FiltersP
             </Select>
           </div>
 
-          {/* ADV */}
+          {/* Product */}
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">ADV</Label>
+            <Label className="text-sm text-muted-foreground">Produto</Label>
             <Select
-              value={values.adv || "all"}
-              onValueChange={(v) => handleChange("adv", v)}
+              value={values.product || "all"}
+              onValueChange={(v) => handleChange("product", v)}
             >
               <SelectTrigger className="bg-input border-border">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border max-h-60">
                 <SelectItem value="all">Todos</SelectItem>
-                {options.advs.sort().map((a) => (
-                  <SelectItem key={a} value={a}>
-                    {a}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* VSL */}
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">VSL</Label>
-            <Select
-              value={values.vsl || "all"}
-              onValueChange={(v) => handleChange("vsl", v)}
-            >
-              <SelectTrigger className="bg-input border-border">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border max-h-60">
-                <SelectItem value="all">Todas</SelectItem>
-                {options.vsls.sort().map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {v}
+                {options.products.sort().map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
                   </SelectItem>
                 ))}
               </SelectContent>

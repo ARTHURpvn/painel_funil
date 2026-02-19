@@ -1,10 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, TrendingUp, ShoppingCart, Percent } from "lucide-react";
+import { DollarSign, TrendingUp, Percent } from "lucide-react";
 
 interface TotalsProps {
   totalCost: number;
   totalProfit: number;
-  totalPurchases: number;
   roi: number;
   isLoading?: boolean;
 }
@@ -31,14 +30,13 @@ function getRoiColorClass(roi: number): string {
 export default function Totals({
   totalCost,
   totalProfit,
-  totalPurchases,
   roi,
   isLoading,
 }: TotalsProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
           <Card key={i} className="bg-card border-border animate-pulse">
             <CardContent className="p-4">
               <div className="h-4 bg-muted rounded w-20 mb-2" />
@@ -51,7 +49,7 @@ export default function Totals({
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className="bg-card border-border">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -84,18 +82,6 @@ export default function Totals({
           </div>
           <p className={`text-2xl font-bold ${getRoiColorClass(roi)}`}>
             {formatPercent(roi)}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border-border">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <ShoppingCart className="w-4 h-4" />
-            <span className="text-sm">Total Compras</span>
-          </div>
-          <p className="text-2xl font-bold text-foreground">
-            {totalPurchases || "-"}
           </p>
         </CardContent>
       </Card>

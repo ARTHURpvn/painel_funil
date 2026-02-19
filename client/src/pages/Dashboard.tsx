@@ -14,10 +14,9 @@ interface DashboardProps {
 
 interface FilterValues {
   gestor?: string;
-  rede?: string;
+  site?: string;
   nicho?: string;
-  adv?: string;
-  vsl?: string;
+  product?: string;
   dataInicio?: string;
   dataFim?: string;
 }
@@ -41,10 +40,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const options = useMemo(
     () => ({
       gestores: filterOptions?.gestores || [],
-      redes: filterOptions?.redes || [],
+      sites: filterOptions?.sites || [],
       nichos: filterOptions?.nichos || [],
-      advs: filterOptions?.advs || [],
-      vsls: filterOptions?.vsls || [],
+      products: filterOptions?.products || [],
     }),
     [filterOptions]
   );
@@ -81,7 +79,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         <Totals
           totalCost={totals?.totalCost || 0}
           totalProfit={totals?.totalProfit || 0}
-          totalPurchases={totals?.totalPurchases || 0}
           roi={totals?.roi || 0}
           isLoading={isLoadingTotals}
         />

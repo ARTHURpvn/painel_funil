@@ -26,7 +26,6 @@ import { Loader2, Download, AlertCircle, CheckCircle } from "lucide-react";
 export function RedTrackImporter() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [campaignFilter, setCampaignFilter] = useState("");
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [result, setResult] = useState<{
     type: "success" | "error";
@@ -83,7 +82,6 @@ export function RedTrackImporter() {
       startDate,
       endDate,
       replaceExisting,
-      campaignFilter: campaignFilter || undefined,
     });
   };
 
@@ -202,16 +200,13 @@ export function RedTrackImporter() {
 
           {/* Instructions */}
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">Formato de Nome de Campanha</h4>
-            <p className="text-sm text-muted-foreground mb-2">
-              As campanhas devem seguir este formato:
-            </p>
-            <code className="text-xs bg-background px-2 py-1 rounded">
-              GESTOR_REDE_NICHO_ADV_VSL_PRODUTO
-            </code>
-            <p className="text-xs text-muted-foreground mt-2 break-all">
-              Exemplo: ARTHUR_FB_EMAGRECIMENTO_ADV01_VSL01_PRODUTOX
-            </p>
+            <h4 className="font-medium mb-2">Informações</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Os dados serão importados dia a dia no intervalo selecionado</li>
+              <li>• Um delay de 1 segundo é aplicado entre cada requisição</li>
+              <li>• Apenas campanhas NTE-ERICK e NTE-BARROS serão importadas</li>
+              <li>• Os dados incluem: gestor, site, nicho, produto, custo, lucro e ROI</li>
+            </ul>
           </div>
         </CardContent>
       </Card>

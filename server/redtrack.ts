@@ -1,6 +1,9 @@
 import axios, { AxiosInstance } from "axios";
 import { z } from "zod";
 
+// Helper function para adicionar delay entre requisições
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Schemas para validação dos dados da RedTrack API
 const RedTrackCampaignSchema = z.object({
   campaign: z.string().optional().default(""),
@@ -8,9 +11,10 @@ const RedTrackCampaignSchema = z.object({
   site: z.string().optional().default(""),
   nicho: z.string().optional().default(""),
   product: z.string().optional().default(""),
-  cost: z.number().or(z.string()).optional().default(0),
-  profit: z.number().or(z.string()).optional().default(0),
-  roi: z.number().or(z.string()).optional().default(0),
+  date: z.string().optional().default(""),
+  cost: z.number().optional().default(0),
+  profit: z.number().optional().default(0),
+  roi: z.number().optional().default(0),
 });
 
 const RedTrackReportSchema = z.array(RedTrackCampaignSchema);
@@ -47,74 +51,93 @@ export class RedTrackService {
    * Fetch campaign data from RedTrack API
    * @param startDate - Start date in YYYY-MM-DD format
    * @param endDate - End date in YYYY-MM-DD format
-   * @param groupBy - Group data by specific dimensions (campaign, sub1, sub2, sub3, etc.)
    */
   async getCampaignReport(
     startDate: string,
-    endDate: string,
-    groupBy: string[] = ["campaign", "sub1", "sub2", "sub3"]
+    endDate: string
   ): Promise<RedTrackReport> {
     try {
-      console.log(`[RedTrack] Fetching report from ${startDate} to ${endDate}`);
-      let res: string[] = [];
+      let data: RedTrackReport = [];
 
-      const params: Record<string, string> = {
-        api_key: this.apiKey,
-        group: groupBy.join(","),
-        date_from: startDate,
-        date_to: endDate,
-        total: "false"
-      };
+      const startDateTime = new Date(startDate).getTime();
+      const endDateTime = new Date(endDate).getTime();
+      const diff = endDateTime - startDateTime;
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
 
-      let response = await this.client.get("/report", {
-        params: { ...params, rt_campaign: "NAYARA" },
-      });
+      for (let i = 0; i < days; i++) {
+        if (i > 0) {
+          await sleep(2500);
+        }
 
-      let n_response = await this.client.get("/report", {
-        params: { ...params, rt_campaign: "NT" },
-      });
+        const currentDate = new Date(startDateTime + i * 24 * 60 * 60 * 1000);
+        const dateStr = currentDate.toISOString().split("T")[0];
 
-      if(n_response.data) {
-        response.data = response.data.concat(n_response.data);
+        const params: Record<string, string | boolean| number> = {
+          api_key: this.apiKey,
+          group: "campaign,sub1,sub2,sub3",
+          date_from: dateStr,
+          date_to: dateStr,
+          total: true,
+          rt_campaign: "NT",
+          per: 1000
+        };
+
+        let response = await this.client.get("/report", {
+          params: { ...params },
+        });
+
+        console.log(`[RedTrack] Fetched data for ${dateStr} (${i+1}/${days}): ${response.data?.items?.length || 0} records`);
+
+        let responseData = response.data;
+        if (responseData && typeof responseData === 'object' && !Array.isArray(responseData)) {
+          responseData = responseData.items;
+        }
+
+        let parsed = RedTrackReportSchema.parse(responseData);
+
+        const gestoresPermitidos = ["NTE-ERICK", "NTE-BARROS"];
+
+        parsed = parsed.filter(record => {
+          const parts = record.campaign.split(" | ");
+          const gestor = parts[1]?.trim().toUpperCase() || "";
+          const hasValidCost = record.cost > 0;
+
+          const isValid = gestoresPermitidos.includes(gestor) && hasValidCost;
+
+          if (isValid) {
+            console.log(`✓ Campaign approved: ${record.campaign} | Cost: ${record.cost}`);
+          } else {
+            console.log(
+              `x Campaign not approved: ${record.campaign} | Cost: ${record.cost}`
+            );
+          }
+
+          return isValid;
+        });
+
+        parsed.forEach((record, index) => {
+          const parts = record.campaign.split(" | ");
+
+          parsed[index].gestor = parts[1] ? parts[1].trim() : "";
+          parsed[index].nicho = parts[3] ? parts[3].trim() : "";
+          parsed[index].product = parts[4] ? parts[4].trim() : "";
+          parsed[index].site = parts[5] ? parts[5].trim() : "";
+          parsed[index].date = dateStr;
+          parsed[index].cost = parseFloat(String(record.cost)) || 0;
+          parsed[index].profit = parseFloat(String(record.profit)) || 0;
+          parsed[index].roi = parseFloat(String(record.roi)) || 0;
+        });
+
+        data.push(...parsed);
       }
 
-      let parsed = RedTrackReportSchema.parse(response.data);
-
-      // normalizar maiusculo e minusculo
-      const permitidos = ["NTE-NAYARA", "NTE-ERICK", "NTE-BARROS"];
-
-      parsed = parsed.filter(record => {
-        const nomeCampanha = record.campaign.toUpperCase();
-        return permitidos.some(termo => nomeCampanha.includes(termo));
-      });
-
-      parsed.forEach((record, index) => {
-        res = record.campaign.split(" | ");
-        parsed[index].gestor = res[1] || "";
-        parsed[index].product = res[4] || "";
-        parsed[index].nicho = res[3] || "";
-        if(res[1] === "NTE-Erick") parsed[index].site = res[7];
-        else parsed[index].site = res[6];
-      });
-      console.log(parsed);
-
-      console.log(
-        `[RedTrack] Successfully fetched ${parsed?.length || 0} records`
-      );
-
-      return parsed;
+      return data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error("[RedTrack] API Error:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message,
-        });
         throw new Error(
           `RedTrack API Error: ${error.response?.data?.message || error.message}`
         );
       }
-      console.error("[RedTrack] Unexpected error:", error);
       throw error;
     }
   }

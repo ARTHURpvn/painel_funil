@@ -11,6 +11,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:init": "tsx scripts/init-db.ts",
+    "db:format": "tsx scripts/format-db.ts",
+    "db:drop": "tsx scripts/drop-db.ts",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "test:import": "tsx scripts/test-import.ts"
   },

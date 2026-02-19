@@ -1,17 +1,17 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, Loader2 } from "lucide-react";
 
 interface FunnelRow {
+  gestor: string | null;
+  site: string | null;
   nicho: string | null;
-  adv: string | null;
-  vsl: string | null;
-  produto: string | null;
-  dataRegistro: Date | string | null;
+  product: string | null;
+  date: Date | string | null;
+  dateStr?: string;
   totalCost: string;
   totalProfit: string;
-  totalPurchases: number;
-  totalInitiateCheckoutCPA: string;
+  avgRoi: string;
 }
 
 interface DataTableProps {
@@ -33,7 +33,7 @@ function formatDate(date: Date | string | null): string {
   if (!date) return "";
   // Parse date string directly to avoid timezone issues
   if (typeof date === "string") {
-    const [year, month, day] = date.split('-');
+    const [, month, day] = date.split('-');
     return `${day}/${month}`;
   }
   // For Date objects, use UTC methods to avoid timezone shifts
@@ -53,26 +53,20 @@ function getRoiClass(roi: number): string {
   return "roi-positive";
 }
 
-function formatNumber(value: number): string {
-  if (value === 0) return "";
-  return value.toString();
-}
 
-// Group data by funnel (nicho + adv + vsl + produto)
+// Group data by funnel (gestor + site + nicho + product)
 interface GroupedFunnel {
   key: string;
+  gestor: string;
+  site: string;
   nicho: string;
-  adv: string;
-  vsl: string;
-  produto: string;
+  product: string;
   totalCost: number;
   dailyData: {
     date: string;
     cost: number;
     profit: number;
     roi: number;
-    purchases: number;
-    initiateCheckoutCPA: number;
   }[];
 }
 
@@ -83,26 +77,26 @@ export default function DataTable({ data, isLoading }: DataTableProps) {
     const datesSet = new Set<string>();
 
     for (const row of data) {
-      const key = `${row.nicho || ""}-${row.adv || ""}-${row.vsl || ""}-${row.produto || ""}`;
-      const dateStr = row.dataRegistro
-        ? typeof row.dataRegistro === "string"
-          ? row.dataRegistro.split("T")[0]
-          : row.dataRegistro.toISOString().split("T")[0]
-        : "";
+      const key = `${row.gestor || ""}-${row.site || ""}-${row.nicho || ""}-${row.product || ""}`;
+      const dateStr = row.dateStr || (row.date
+        ? typeof row.date === "string"
+          ? row.date.split("T")[0]
+          : row.date.toISOString().split("T")[0]
+        : "");
 
       if (dateStr) datesSet.add(dateStr);
 
       const cost = parseFloat(row.totalCost) || 0;
       const profit = parseFloat(row.totalProfit) || 0;
-      const roi = calculateRoi(cost, profit);
+      const roi = parseFloat(row.avgRoi) || calculateRoi(cost, profit);
 
       if (!groups.has(key)) {
         groups.set(key, {
           key,
+          gestor: row.gestor || "",
+          site: row.site || "",
           nicho: row.nicho || "",
-          adv: row.adv || "",
-          vsl: row.vsl || "",
-          produto: row.produto || "",
+          product: row.product || "",
           totalCost: 0,
           dailyData: [],
         });
@@ -115,8 +109,6 @@ export default function DataTable({ data, isLoading }: DataTableProps) {
         cost,
         profit,
         roi,
-        purchases: row.totalPurchases || 0,
-        initiateCheckoutCPA: parseFloat(row.totalInitiateCheckoutCPA) || 0,
       });
     }
 
@@ -167,13 +159,16 @@ export default function DataTable({ data, isLoading }: DataTableProps) {
             <thead className="sticky top-0 z-10">
               <tr className="bg-secondary">
                 <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-foreground border-b border-border">
+                  Gestor
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-foreground border-b border-border">
+                  Site
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-foreground border-b border-border">
                   Nicho
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-foreground border-b border-border">
-                  ADV
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-foreground border-b border-border">
-                  VSL
+                  Produto
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-secondary-foreground border-b border-border">
                   Resultado
@@ -200,18 +195,16 @@ export default function DataTable({ data, isLoading }: DataTableProps) {
                     {/* Row 1: Gasto */}
                     <tr className="border-b border-border/50">
                       <td className="px-4 py-2 text-sm text-foreground" rowSpan={3}>
+                        {funnel.gestor || "-"}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground" rowSpan={3}>
+                        {funnel.site || "-"}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-foreground" rowSpan={3}>
                         {funnel.nicho || "-"}
                       </td>
                       <td className="px-4 py-2 text-sm text-foreground" rowSpan={3}>
-                        {funnel.adv || "-"}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-foreground" rowSpan={3}>
-                        {funnel.vsl}
-                        {funnel.produto && (
-                          <span className="text-muted-foreground ml-1">
-                            ({funnel.produto})
-                          </span>
-                        )}
+                        {funnel.product || "-"}
                       </td>
                       <td className="px-4 py-2 text-sm text-muted-foreground">
                         Gasto
@@ -280,5 +273,3 @@ export default function DataTable({ data, isLoading }: DataTableProps) {
   );
 }
 
-// Need to import React for Fragment
-import React from "react";

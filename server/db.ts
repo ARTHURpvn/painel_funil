@@ -1,7 +1,6 @@
 import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, funnelData, InsertFunnelData } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { funnelData, InsertFunnelData } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -17,76 +16,6 @@ export async function getDb() {
   return _db;
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
-}
-
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
-}
 
 // ============================================
 // Funnel Data Functions
@@ -99,57 +28,40 @@ export async function getUserByOpenId(openId: string) {
 export async function insertFunnelDataBatch(records: InsertFunnelData[]): Promise<number> {
   const db = await getDb();
   if (!db || records.length === 0) {
-    console.warn('[Database] Cannot insert funnel data: database not available or no records');
     return 0;
   }
 
   try {
-    // Insert in batches of 500 to avoid query size limits
-    const batchSize = 500;
+    const batchSize = 100;
     let totalInserted = 0;
 
     for (let i = 0; i < records.length; i += batchSize) {
       const batch = records.slice(i, i + batchSize);
-      await db.insert(funnelData).values(batch);
-      totalInserted += batch.length;
-      console.log(`[Database] Inserted batch ${Math.floor(i / batchSize) + 1}: ${batch.length} records`);
+
+      try {
+        await db.insert(funnelData).values(batch);
+        totalInserted += batch.length;
+      } catch (batchError) {
+        console.error(`[Database] Erro ao inserir batch:`, batchError);
+
+        for (let j = 0; j < batch.length; j++) {
+          try {
+            await db.insert(funnelData).values([batch[j]]);
+            totalInserted++;
+          } catch (singleError) {
+            // Silencioso
+          }
+        }
+      }
     }
 
-    console.log(`[Database] Successfully inserted ${totalInserted} funnel records`);
     return totalInserted;
   } catch (error) {
-    console.error('[Database] Failed to insert funnel data batch:', error);
+    console.error('[Database] Erro crítico:', error);
     throw error;
   }
 }
 
-/**
- * Upsert (insert or update) funnel data
- * Useful for updating existing records or inserting new ones
- */
-export async function upsertFunnelData(record: InsertFunnelData): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn('[Database] Cannot upsert funnel data: database not available');
-    return;
-  }
-
-  try {
-    await db.insert(funnelData).values(record).onDuplicateKeyUpdate({
-      set: {
-        cost: record.cost,
-        profit: record.profit,
-        roi: record.roi,
-        purchases: record.purchases,
-        initiateCheckoutCPA: record.initiateCheckoutCPA,
-        updatedAt: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('[Database] Failed to upsert funnel data:', error);
-    throw error;
-  }
-}
 
 /**
  * Delete funnel data for a specific date range
@@ -163,12 +75,12 @@ export async function deleteFunnelDataByDateRange(startDate: string, endDate: st
   }
 
   try {
-    const result = await db
+    await db
       .delete(funnelData)
       .where(
         and(
-          gte(funnelData.dataRegistro, new Date(startDate)),
-          lte(funnelData.dataRegistro, new Date(endDate))
+          gte(funnelData.date, new Date(startDate)),
+          lte(funnelData.date, new Date(endDate))
         )
       );
 
@@ -185,20 +97,20 @@ export async function getExistingDates(): Promise<string[]> {
   if (!db) return [];
 
   const result = await db
-    .selectDistinct({ date: funnelData.dataRegistro })
+    .selectDistinct({ date: funnelData.date })
     .from(funnelData)
-    .orderBy(desc(funnelData.dataRegistro));
+    .orderBy(desc(funnelData.date));
 
   return result.map(r => r.date ? new Date(r.date).toISOString().split('T')[0] : '');
 }
 
 
+
 export interface FunnelFilters {
   gestor?: string;
-  rede?: string;
+  site?: string;
   nicho?: string;
-  adv?: string;
-  vsl?: string;
+  product?: string;
   dataInicio?: string;
   dataFim?: string;
 }
@@ -213,62 +125,58 @@ export async function getAggregatedFunnelData(filters: FunnelFilters) {
   if (filters.gestor) {
     conditions.push(eq(funnelData.gestor, filters.gestor));
   }
-  if (filters.rede) {
-    conditions.push(eq(funnelData.rede, filters.rede));
+  if (filters.site) {
+    conditions.push(eq(funnelData.site, filters.site));
   }
   if (filters.nicho) {
     conditions.push(eq(funnelData.nicho, filters.nicho));
   }
-  if (filters.adv) {
-    conditions.push(eq(funnelData.adv, filters.adv));
-  }
-  if (filters.vsl) {
-    conditions.push(eq(funnelData.vsl, filters.vsl));
+  if (filters.product) {
+    conditions.push(eq(funnelData.product, filters.product));
   }
   if (filters.dataInicio) {
-    conditions.push(gte(funnelData.dataRegistro, new Date(filters.dataInicio)));
+    conditions.push(gte(funnelData.date, new Date(filters.dataInicio)));
   }
   if (filters.dataFim) {
-    conditions.push(lte(funnelData.dataRegistro, new Date(filters.dataFim)));
+    conditions.push(lte(funnelData.date, new Date(filters.dataFim)));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  // Aggregate by nicho, adv, vsl, produto, date
+  // Aggregate by gestor, site, nicho, product, date
   const result = await db
     .select({
+      gestor: funnelData.gestor,
+      site: funnelData.site,
       nicho: funnelData.nicho,
-      adv: funnelData.adv,
-      vsl: funnelData.vsl,
-      produto: funnelData.produto,
-      dataRegistro: funnelData.dataRegistro,
+      product: funnelData.product,
+      date: funnelData.date,
       totalCost: sql<string>`SUM(${funnelData.cost})`,
       totalProfit: sql<string>`SUM(${funnelData.profit})`,
-      totalPurchases: sql<number>`SUM(${funnelData.purchases})`,
-      totalInitiateCheckoutCPA: sql<string>`SUM(${funnelData.initiateCheckoutCPA})`,
+      avgRoi: sql<string>`AVG(${funnelData.roi})`,
     })
     .from(funnelData)
     .where(whereClause)
     .groupBy(
+      funnelData.gestor,
+      funnelData.site,
       funnelData.nicho,
-      funnelData.adv,
-      funnelData.vsl,
-      funnelData.produto,
-      funnelData.dataRegistro
+      funnelData.product,
+      funnelData.date
     )
     .orderBy(desc(sql`SUM(${funnelData.cost})`));
 
   // Fix date timezone issue
   return result.map(r => {
     let dateStr = '';
-    if (r.dataRegistro) {
-      const d = new Date(r.dataRegistro);
+    if (r.date) {
+      const d = new Date(r.date);
       d.setUTCHours(12); // Set to noon UTC to avoid date shift
       dateStr = d.toISOString().split('T')[0];
     }
     return {
       ...r,
-      dataRegistro: dateStr ? new Date(dateStr + 'T12:00:00Z') : r.dataRegistro,
+      date: dateStr ? new Date(dateStr + 'T12:00:00Z') : r.date,
       dateStr,
     };
   });
@@ -276,51 +184,46 @@ export async function getAggregatedFunnelData(filters: FunnelFilters) {
 
 export async function getFilterOptions() {
   const db = await getDb();
-  if (!db) return { gestores: [], redes: [], nichos: [], advs: [], vsls: [] };
+  if (!db) return { gestores: [], sites: [], nichos: [], products: [] };
 
-  const [gestores, redes, nichos, advs, vsls] = await Promise.all([
+  const [gestores, sites, nichos, products] = await Promise.all([
     db.selectDistinct({ value: funnelData.gestor }).from(funnelData).where(sql`${funnelData.gestor} IS NOT NULL`),
-    db.selectDistinct({ value: funnelData.rede }).from(funnelData).where(sql`${funnelData.rede} IS NOT NULL`),
+    db.selectDistinct({ value: funnelData.site }).from(funnelData).where(sql`${funnelData.site} IS NOT NULL`),
     db.selectDistinct({ value: funnelData.nicho }).from(funnelData).where(sql`${funnelData.nicho} IS NOT NULL`),
-    db.selectDistinct({ value: funnelData.adv }).from(funnelData).where(sql`${funnelData.adv} IS NOT NULL`),
-    db.selectDistinct({ value: funnelData.vsl }).from(funnelData).where(sql`${funnelData.vsl} IS NOT NULL`),
+    db.selectDistinct({ value: funnelData.product }).from(funnelData).where(sql`${funnelData.product} IS NOT NULL`),
   ]);
 
   return {
     gestores: gestores.map(g => g.value).filter(Boolean) as string[],
-    redes: redes.map(r => r.value).filter(Boolean) as string[],
+    sites: sites.map(s => s.value).filter(Boolean) as string[],
     nichos: nichos.map(n => n.value).filter(Boolean) as string[],
-    advs: advs.map(a => a.value).filter(Boolean) as string[],
-    vsls: vsls.map(v => v.value).filter(Boolean) as string[],
+    products: products.map(p => p.value).filter(Boolean) as string[],
   };
 }
 
 export async function getTotals(filters: FunnelFilters) {
   const db = await getDb();
-  if (!db) return { totalCost: 0, totalProfit: 0, totalPurchases: 0, roi: 0 };
+  if (!db) return { totalCost: 0, totalProfit: 0, roi: 0 };
 
   const conditions = [];
 
   if (filters.gestor) {
     conditions.push(eq(funnelData.gestor, filters.gestor));
   }
-  if (filters.rede) {
-    conditions.push(eq(funnelData.rede, filters.rede));
+  if (filters.site) {
+    conditions.push(eq(funnelData.site, filters.site));
   }
   if (filters.nicho) {
     conditions.push(eq(funnelData.nicho, filters.nicho));
   }
-  if (filters.adv) {
-    conditions.push(eq(funnelData.adv, filters.adv));
-  }
-  if (filters.vsl) {
-    conditions.push(eq(funnelData.vsl, filters.vsl));
+  if (filters.product) {
+    conditions.push(eq(funnelData.product, filters.product));
   }
   if (filters.dataInicio) {
-    conditions.push(gte(funnelData.dataRegistro, new Date(filters.dataInicio)));
+    conditions.push(gte(funnelData.date, new Date(filters.dataInicio)));
   }
   if (filters.dataFim) {
-    conditions.push(lte(funnelData.dataRegistro, new Date(filters.dataFim)));
+    conditions.push(lte(funnelData.date, new Date(filters.dataFim)));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -329,7 +232,6 @@ export async function getTotals(filters: FunnelFilters) {
     .select({
       totalCost: sql<string>`COALESCE(SUM(${funnelData.cost}), 0)`,
       totalProfit: sql<string>`COALESCE(SUM(${funnelData.profit}), 0)`,
-      totalPurchases: sql<number>`COALESCE(SUM(${funnelData.purchases}), 0)`,
     })
     .from(funnelData)
     .where(whereClause);
@@ -342,7 +244,6 @@ export async function getTotals(filters: FunnelFilters) {
   return {
     totalCost: cost,
     totalProfit: profit,
-    totalPurchases: totals?.totalPurchases || 0,
     roi,
   };
 }
@@ -358,37 +259,34 @@ export async function getDailyTotals(filters: FunnelFilters) {
   if (filters.gestor) {
     conditions.push(eq(funnelData.gestor, filters.gestor));
   }
-  if (filters.rede) {
-    conditions.push(eq(funnelData.rede, filters.rede));
+  if (filters.site) {
+    conditions.push(eq(funnelData.site, filters.site));
   }
   if (filters.nicho) {
     conditions.push(eq(funnelData.nicho, filters.nicho));
   }
-  if (filters.adv) {
-    conditions.push(eq(funnelData.adv, filters.adv));
-  }
-  if (filters.vsl) {
-    conditions.push(eq(funnelData.vsl, filters.vsl));
+  if (filters.product) {
+    conditions.push(eq(funnelData.product, filters.product));
   }
   if (filters.dataInicio) {
-    conditions.push(gte(funnelData.dataRegistro, new Date(filters.dataInicio)));
+    conditions.push(gte(funnelData.date, new Date(filters.dataInicio)));
   }
   if (filters.dataFim) {
-    conditions.push(lte(funnelData.dataRegistro, new Date(filters.dataFim)));
+    conditions.push(lte(funnelData.date, new Date(filters.dataFim)));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   const result = await db
     .select({
-      date: funnelData.dataRegistro,
+      date: funnelData.date,
       totalCost: sql<string>`COALESCE(SUM(${funnelData.cost}), 0)`,
       totalProfit: sql<string>`COALESCE(SUM(${funnelData.profit}), 0)`,
     })
     .from(funnelData)
     .where(whereClause)
-    .groupBy(funnelData.dataRegistro)
-    .orderBy(funnelData.dataRegistro);
+    .groupBy(funnelData.date)
+    .orderBy(funnelData.date);
 
   return result.map(r => {
     const cost = parseFloat(r.totalCost) || 0;
