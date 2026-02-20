@@ -1,19 +1,20 @@
+"use client"; 
+
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"; 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Download, AlertCircle, CheckCircle } from "lucide-react";
-
 /**
  * Component for importing data from RedTrack API
  *
@@ -32,15 +33,11 @@ export function RedTrackImporter() {
     message: string;
   } | null>(null);
 
-  // Test connection mutation
   const testConnection = trpc.funnel.testRedTrackConnection.useQuery(
     undefined,
-    {
-      enabled: false,
-    }
+    { enabled: false }
   );
 
-  // Import mutation
   const importData = trpc.funnel.importFromRedTrack.useMutation({
     onSuccess: data => {
       setResult({
@@ -56,17 +53,6 @@ export function RedTrackImporter() {
     },
   });
 
-  const handleTestConnection = async () => {
-    setResult(null);
-    const data = await testConnection.refetch();
-
-    if (data.data) {
-      setResult({
-        type: data.data.success ? "success" : "error",
-        message: data.data.message,
-      });
-    }
-  };
 
   const handleImport = () => {
     if (!startDate || !endDate) {
@@ -76,51 +62,29 @@ export function RedTrackImporter() {
       });
       return;
     }
-
     setResult(null);
-    importData.mutate({
-      startDate,
-      endDate,
-      replaceExisting,
-    });
+    importData.mutate({ startDate, endDate, replaceExisting });
   };
 
   const isLoading = testConnection.isFetching || importData.isPending;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>Importar Dados do RedTrack</CardTitle>
-          <CardDescription>
-            Importe dados de campanhas da API RedTrack para o banco de dados
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Test Connection */}
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <h3 className="font-medium">Testar Conexão</h3>
-              <p className="text-sm text-muted-foreground">
-                Verifique se as credenciais da API estão corretas
-              </p>
-            </div>
-            <Button
-              onClick={handleTestConnection}
-              disabled={isLoading}
-              variant="outline"
-            >
-              {testConnection.isFetching ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Testando...
-                </>
-              ) : (
-                "Testar"
-              )}
-            </Button>
-          </div>
+    /* Botão que abre o Modal */
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost">
+          <Download className="mr-2 h-4 w-4" />
+          Importar Dados RedTrack
+        </Button>
+      </DialogTrigger>
 
+      {/* Conteúdo do Modal */}
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Importar Dados</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
           {/* Date Range */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
@@ -150,15 +114,10 @@ export function RedTrackImporter() {
               <Checkbox
                 id="replaceExisting"
                 checked={replaceExisting}
-                onCheckedChange={checked =>
-                  setReplaceExisting(checked === true)
-                }
+                onCheckedChange={checked => setReplaceExisting(checked === true)}
                 disabled={isLoading}
               />
-              <Label
-                htmlFor="replaceExisting"
-                className="text-sm font-normal cursor-pointer"
-              >
+              <Label htmlFor="replaceExisting" className="text-sm font-normal cursor-pointer">
                 Substituir dados existentes no período selecionado
               </Label>
             </div>
@@ -166,14 +125,8 @@ export function RedTrackImporter() {
 
           {/* Result Alert */}
           {result && (
-            <Alert
-              variant={result.type === "error" ? "destructive" : "default"}
-            >
-              {result.type === "success" ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <AlertCircle className="h-4 w-4" />
-              )}
+            <Alert variant={result.type === "error" ? "destructive" : "default"}>
+              {result.type === "success" ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
               <AlertDescription>{result.message}</AlertDescription>
             </Alert>
           )}
@@ -186,30 +139,22 @@ export function RedTrackImporter() {
             size="lg"
           >
             {importData.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Importando...
-              </>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Importando...</>
             ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Importar Dados
-              </>
+              <><Download className="mr-2 h-4 w-4" /> Importar Dados</>
             )}
           </Button>
 
           {/* Instructions */}
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">Informações</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
+            <h4 className="font-medium mb-2 text-sm">Informações</h4>
+            <ul className="text-xs text-muted-foreground space-y-1">
               <li>• Os dados serão importados dia a dia no intervalo selecionado</li>
               <li>• Um delay de 1 segundo é aplicado entre cada requisição</li>
-              <li>• Apenas campanhas NTE-ERICK e NTE-BARROS serão importadas</li>
-              <li>• Os dados incluem: gestor, site, nicho, produto, custo, lucro e ROI</li>
             </ul>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

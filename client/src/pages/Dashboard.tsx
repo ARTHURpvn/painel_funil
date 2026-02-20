@@ -8,10 +8,6 @@ import DataTable from "@/components/DataTable";
 import DailyChart from "@/components/DailyChart";
 import { RedTrackImporter } from "@/components/RedTrackImporter";
 
-interface DashboardProps {
-  onLogout: () => void;
-}
-
 interface FilterValues {
   gestor?: string;
   site?: string;
@@ -21,7 +17,7 @@ interface FilterValues {
   dataFim?: string;
 }
 
-export default function Dashboard({ onLogout }: DashboardProps) {
+export default function Dashboard() {
   const [filters, setFilters] = useState<FilterValues>({});
 
   // Fetch filter options
@@ -52,23 +48,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     setFilters({});
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("painel_auth");
-    onLogout();
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <RedTrackImporter />
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-20">
         <div className="container py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Painel de Funis</h1>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            <RedTrackImporter />
           </div>
         </div>
       </header>
