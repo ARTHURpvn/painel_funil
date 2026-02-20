@@ -14,14 +14,6 @@ function App() {
     setIsAuthenticated(auth === "true");
   }, []);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
-
   // Show nothing while checking auth state
   if (isAuthenticated === null) {
     return (
@@ -36,7 +28,7 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-            <Dashboard onLogout={handleLogout} />
+            <Dashboard  />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

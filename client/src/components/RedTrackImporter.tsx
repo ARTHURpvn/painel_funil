@@ -53,16 +53,6 @@ export function RedTrackImporter() {
     },
   });
 
-  const handleTestConnection = async () => {
-    setResult(null);
-    const data = await testConnection.refetch();
-    if (data.data) {
-      setResult({
-        type: data.data.success ? "success" : "error",
-        message: data.data.message,
-      });
-    }
-  };
 
   const handleImport = () => {
     if (!startDate || !endDate) {
@@ -82,7 +72,7 @@ export function RedTrackImporter() {
     /* Botão que abre o Modal */
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="default">
+        <Button variant="ghost">
           <Download className="mr-2 h-4 w-4" />
           Importar Dados RedTrack
         </Button>
@@ -91,34 +81,10 @@ export function RedTrackImporter() {
       {/* Conteúdo do Modal */}
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Importar Dados do RedTrack</DialogTitle>
+          <DialogTitle>Importar Dados</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Test Connection */}
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <h3 className="font-medium">Testar Conexão</h3>
-              <p className="text-sm text-muted-foreground">
-                Verifique se as credenciais da API estão corretas
-              </p>
-            </div>
-            <Button
-              onClick={handleTestConnection}
-              disabled={isLoading}
-              variant="outline"
-            >
-              {testConnection.isFetching ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Testando...
-                </>
-              ) : (
-                "Testar"
-              )}
-            </Button>
-          </div>
-
           {/* Date Range */}
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
@@ -185,8 +151,6 @@ export function RedTrackImporter() {
             <ul className="text-xs text-muted-foreground space-y-1">
               <li>• Os dados serão importados dia a dia no intervalo selecionado</li>
               <li>• Um delay de 1 segundo é aplicado entre cada requisição</li>
-              <li>• Apenas campanhas NTE-ERICK e NTE-BARROS serão importadas</li>
-              <li>• Os dados incluem: gestor, site, nicho, produto, custo, lucro e ROI</li>
             </ul>
           </div>
         </div>
