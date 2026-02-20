@@ -32,7 +32,7 @@ export async function insertFunnelDataBatch(records: InsertFunnelData[]): Promis
   }
 
   try {
-    const batchSize = 100;
+    const batchSize = 1000;
     let totalInserted = 0;
 
     for (let i = 0; i < records.length; i += batchSize) {
@@ -116,6 +116,74 @@ export interface FunnelFilters {
 }
 
 
+/**
+ * Get raw funnel data without aggregation (returns all individual records)
+ */
+export async function getRawFunnelData(filters: FunnelFilters) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (filters.gestor) {
+    conditions.push(eq(funnelData.gestor, filters.gestor));
+  }
+  if (filters.site) {
+    conditions.push(eq(funnelData.site, filters.site));
+  }
+  if (filters.nicho) {
+    conditions.push(eq(funnelData.nicho, filters.nicho));
+  }
+  if (filters.product) {
+    conditions.push(eq(funnelData.product, filters.product));
+  }
+  if (filters.dataInicio) {
+    conditions.push(gte(funnelData.date, new Date(filters.dataInicio)));
+  }
+  if (filters.dataFim) {
+    conditions.push(lte(funnelData.date, new Date(filters.dataFim)));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Get all raw records without aggregation
+  const result = await db
+    .select({
+      gestor: funnelData.gestor,
+      site: funnelData.site,
+      nicho: funnelData.nicho,
+      product: funnelData.product,
+      date: funnelData.date,
+      totalCost: funnelData.cost,
+      totalProfit: funnelData.profit,
+      avgRoi: funnelData.roi,
+    })
+    .from(funnelData)
+    .where(whereClause)
+    .orderBy(desc(funnelData.date), desc(funnelData.cost));
+
+  // Fix date timezone issue
+  return result.map(r => {
+    let dateStr = '';
+    if (r.date) {
+      const d = new Date(r.date);
+      d.setUTCHours(12);
+      dateStr = d.toISOString().split('T')[0];
+    }
+    return {
+      ...r,
+      date: dateStr ? new Date(dateStr + 'T12:00:00Z') : r.date,
+      dateStr,
+      totalCost: String(r.totalCost || 0),
+      totalProfit: String(r.totalProfit || 0),
+      avgRoi: String(r.avgRoi || 0),
+    };
+  });
+}
+
+/**
+ * Get aggregated funnel data (sums by gestor, site, nicho, product, date)
+ */
 export async function getAggregatedFunnelData(filters: FunnelFilters) {
   const db = await getDb();
   if (!db) return [];

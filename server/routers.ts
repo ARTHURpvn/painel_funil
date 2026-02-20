@@ -2,9 +2,9 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { 
-  getFilterOptions, 
-  getAggregatedFunnelData, 
-  getTotals, 
+  getFilterOptions,
+  getRawFunnelData,
+  getTotals,
   getExistingDates,
   getDailyTotals,
   insertFunnelDataBatch,
@@ -22,7 +22,7 @@ export const appRouter = router({
       return await getFilterOptions();
     }),
 
-    // Get aggregated data with filters
+    // Get data with filters (returns all individual records)
     getData: publicProcedure
       .input(z.object({
         gestor: z.string().optional(),
@@ -33,7 +33,7 @@ export const appRouter = router({
         dataFim: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        return await getAggregatedFunnelData(input);
+        return await getRawFunnelData(input);
       }),
 
     // Get totals with filters

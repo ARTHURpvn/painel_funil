@@ -97,31 +97,28 @@ export class RedTrackService {
 
         const gestoresPermitidos = ["NTE-ERICK", "NTE-BARROS"];
 
+        const totalRecords = parsed.length;
         parsed = parsed.filter(record => {
           const parts = record.campaign.split(" | ");
           const gestor = parts[1]?.trim().toUpperCase() || "";
           const hasValidCost = record.cost > 0;
-
-          const isValid = gestoresPermitidos.includes(gestor) && hasValidCost;
-
-          if (isValid) {
-            console.log(`✓ Campaign approved: ${record.campaign} | Cost: ${record.cost}`);
-          } else {
-            console.log(
-              `x Campaign not approved: ${record.campaign} | Cost: ${record.cost}`
-            );
-          }
-
-          return isValid;
+          console.log(
+            `[RedTrack] ${gestoresPermitidos.includes(gestor) && hasValidCost ? "Aprovado" : "Negado"} - ${gestor} - ${record.cost}`
+          );
+          return gestoresPermitidos.includes(gestor) && hasValidCost;
         });
 
+        console.log(`[RedTrack] ${dateStr}: ${parsed.length}/${totalRecords} campanhas aprovadas`);
+
+        // Estrutura: NT | Gestor | Plataforma | Nicho | Produto | ? | Site | Teste
         parsed.forEach((record, index) => {
           const parts = record.campaign.split(" | ");
 
-          parsed[index].gestor = parts[1] ? parts[1].trim() : "";
+          // Normalizar gestor para uppercase para evitar duplicatas
+          parsed[index].gestor = parts[1] ? parts[1].trim().toUpperCase() : "";
           parsed[index].nicho = parts[3] ? parts[3].trim() : "";
           parsed[index].product = parts[4] ? parts[4].trim() : "";
-          parsed[index].site = parts[5] ? parts[5].trim() : "";
+          parsed[index].site = parts[6] ? parts[6].trim() : "";
           parsed[index].date = dateStr;
           parsed[index].cost = parseFloat(String(record.cost)) || 0;
           parsed[index].profit = parseFloat(String(record.profit)) || 0;
@@ -131,6 +128,7 @@ export class RedTrackService {
         data.push(...parsed);
       }
 
+      console.log(`[RedTrack] Total de campanhas aprovadas: ${data.length}`);
       return data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
